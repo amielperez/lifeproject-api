@@ -12,12 +12,13 @@ class TasksController < ApplicationController
   end
 
   def index
-    render json: Task.by_project(params[:project_id])
+    render json: Task.by_project(params[:project_id]).map(&:to_h)
   end
 
   def create
     Rails.logger.debug task_params
     task = Task.new(task_params)
+    task.status = task.project.statuses.first
     if task.save
       render json: task.to_h, status: :created
     else
@@ -31,7 +32,7 @@ class TasksController < ApplicationController
     task = Task.find(task_id)
     task.update_attributes(task_params)
     if task.save
-      render nothing: true, status: :no_content
+      render json: task.to_h, status: :accepted
     else
       Rails.logger.debug errors: task.errors.full_messages
       render json: { errors: task.errors.full_messages }, status: :conflict
